@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRI en lnea - Portal de Servicios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'sri-blue': '#0c4597',
+                        'sri-gray': '#e5e7eb',
+                        'sri-dark': '#374151',
+                        'sri-footer': '#6b7280'
+                    },
+                    fontFamily: {
+                        sans: ['Arial', 'Helvetica', 'sans-serif'],
+                    }
+                }
+            }
+        }
+        function togglePassword() {
+            var x = document.getElementById("password");
+            var icon = document.getElementById("eye-icon");
+            if (x.type === "password") {
+                x.type = "text";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            } else {
+                x.type = "password";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            }
+        }
+    </script>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; overflow-x: hidden; }
+        .bg-banner {
+            background-image: url('{{ url_for("static", filename="img/portada-internet-1.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- Main Content -->
+    <div class="flex-grow flex flex-col md:flex-row">
+        
+        <!-- Left Column (Banner) -->
+        <div class="hidden md:flex md:w-8/12 bg-gray-200 bg-banner relative shadow-inner">
+            <!-- Overlay in case image doesn't load fully -->
+            <div class="absolute inset-0 bg-gray-400 bg-opacity-20 mix-blend-multiply"></div>
+        </div>
+
+        <!-- Right Column (Login Form) -->
+        <div class="w-full md:w-4/12 bg-sri-blue flex flex-col justify-center items-center p-8 lg:p-12 shadow-2xl z-10 relative">
+            
+            <!-- Logo area -->
+            <div class="mb-10 w-full flex justify-center">
+                <img src="{{ url_for('static', filename='img/sri-en-linea-logo.png') }}" alt="SRI en línea" class="h-16 md:h-20 object-contain">
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-6 w-full max-w-sm rounded text-sm shadow-md" role="alert">
+                            <p><i class="fas fa-exclamation-circle mr-2"></i>{{ message }}</p>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Form -->
+            <form method="POST" action="{{ url_for('frontend.login') }}" class="w-full max-w-sm space-y-5">
+                
+                <!-- RUC Input -->
+                <div>
+                    <label for="ruc" class="block text-sm font-bold text-white mb-1">*RUC / C.I. / Pasaporte</label>
+                    <div class="relative flex items-stretch">
+                        <div class="flex items-center px-3 bg-gray-200 border border-gray-300 rounded-l-sm text-gray-500">
+                            <i class="fas fa-user text-sm"></i>
+                        </div>
+                        <input id="ruc" name="ruc" type="text" required placeholder="1700000000001"
+                            class="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-sm focus:ring-2 focus:ring-blue-300 focus:outline-none sm:text-sm text-gray-800 shadow-inner">
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div>
+                    <label for="password" class="block text-sm font-bold text-white mb-1">*Clave</label>
+                    <div class="relative flex items-stretch">
+                        <div class="flex items-center px-3 bg-gray-200 border border-gray-300 rounded-l-sm text-gray-500">
+                            <i class="fas fa-key text-sm"></i>
+                        </div>
+                        <input id="password" name="password" type="password" required placeholder="Clave"
+                            class="flex-1 min-w-0 block w-full px-3 py-2 focus:ring-2 focus:ring-blue-300 focus:outline-none sm:text-sm text-gray-800 shadow-inner border-r-0">
+                        <div class="flex items-center px-3 bg-white border border-gray-300 border-l-0 rounded-r-sm cursor-pointer hover:bg-gray-50 text-gray-500" onclick="togglePassword()">
+                            <i id="eye-icon" class="fas fa-eye-slash text-sm"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4 flex justify-center">
+                    <button type="submit" 
+                        class="w-32 flex justify-center py-2 px-4 border border-transparent rounded-sm shadow-md text-sm font-bold text-gray-800 bg-gray-200 hover:bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-colors">
+                        Ingresar
+                    </button>
+                </div>
+            </form>
+
+            <!-- Recuperar Clave -->
+            <div class="mt-8 text-center">
+                <a href="#" class="text-white text-sm font-medium hover:underline flex items-center justify-center gap-2 group transition">
+                    <i class="fas fa-lock"></i>
+                    <span>Generar o<br>recuperar<br>clave</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-500 text-white text-xs py-2 px-4 flex flex-col md:flex-row justify-between items-center shadow-inner z-20 relative border-t-4 border-gray-400">
+        <div class="mb-2 md:mb-0">
+            Microsoft Edge 38, Firefox 53, Chrome 58, Safari 10 (o superiores).
+        </div>
+        <div class="mb-2 md:mb-0 text-center flex-grow">
+             Servicio de Rentas Internas 2026
+        </div>
+        <div>
+            <a href="#" class="hover:underline">Privacidad</a>
+        </div>
+    </footer>
+
+</body>
+</html>

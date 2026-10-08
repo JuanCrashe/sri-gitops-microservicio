@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sri-facturacion-config
+  labels:
+    app.kubernetes.io/name: sri-facturacion-service
+data:
+  # Valores por defecto (agnósticos de nube).
+  # Cada overlay sobrescribe CLOUD_PROVIDER, CLUSTER_NAME y CLOUD_REGION.
+  ENVIRONMENT: "production"
+  CLOUD_PROVIDER: "unknown"
+  CLUSTER_NAME: "unknown"
+  CLOUD_REGION: "unknown"
+  # Backend config
+  SUPABASE_URL: "https://<tu-id>.supabase.co" # El valor real puede ir en overlay o local, no es 100% secreto pero lo ponemos como default
+  # Frontend config
+  BACKEND_URL: "http://sri-backend-svc"

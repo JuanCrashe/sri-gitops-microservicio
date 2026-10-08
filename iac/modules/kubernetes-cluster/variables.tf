@@ -1,0 +1,111 @@
+# ============================================
+# Variables del Módulo Genérico Kubernetes Cluster
+# ============================================
+
+variable "cluster_name" {
+  description = "Nombre del clúster Kubernetes"
+  type        = string
+  
+  validation {
+    condition     = can(regex("^[a-z][a-z0-9-]{2,24}$", var.cluster_name))
+    error_message = "El nombre del clúster debe tener entre 3 y 25 caracteres, empezar con letra minúscula y solo contener letras minúsculas, números y guiones."
+  }
+}
+
+variable "cloud_provider" {
+  description = "Proveedor cloud: 'aws' o 'azure'"
+  type        = string
+  
+  validation {
+    condition     = contains(["aws", "azure"], var.cloud_provider)
+    error_message = "El proveedor cloud debe ser 'aws' o 'azure'."
+  }
+}
+
+variable "kubernetes_version" {
+  description = "Versión de Kubernetes a desplegar"
+  type        = string
+  default     = "1.28"
+}
+
+variable "environment" {
+  description = "Ambiente (dev, staging, production)"
+  type        = string
+  default     = "production"
+  
+  validation {
+    condition     = contains(["dev", "staging", "production"], var.environment)
+    error_message = "El ambiente debe ser 'dev', 'staging' o 'production'."
+  }
+}
+
+variable "node_count" {
+  description = "Número de nodos workers"
+  type        = number
+  default     = 3
+  
+  validation {
+    condition     = var.node_count >= 1 && var.node_count <= 10
+    error_message = "El número de nodos debe estar entre 1 y 10."
+  }
+}
+
+variable "node_instance_type" {
+  description = "Tipo de instancia para nodos workers"
+  type        = string
+  default     = "default"
+}
+
+# ============================================
+# Variables específicas de AWS EKS
+# ============================================
+
+variable "subnet_ids" {
+  description = "Lista de IDs de subredes donde se desplegará el clúster EKS (requerido para cloud_provider = 'aws')"
+  type        = list(string)
+  default     = []
+}
+
+variable "cluster_role_arn" {
+  description = "ARN de un rol IAM existente para el control plane de EKS. Si se deja vacío, el módulo crea el rol. Útil en entornos con IAM restringido (p.ej. AWS Academy LabRole)."
+  type        = string
+  default     = ""
+}
+
+variable "api_access_cidrs" {
+  description = "CIDRs autorizados a alcanzar el API server de EKS (443) vía el Security Group del clúster. Vacío = no se añaden reglas extra."
+  type        = list(string)
+  default     = []
+}
+
+variable "admin_principal_arns" {
+  description = "ARNs de identidades IAM humanas (p.ej. user/k8sweb-admin) que reciben access entry + AmazonEKSClusterAdminPolicy en el clúster EKS. Vacío = solo el creador del clúster (que recibe su entrada automáticamente)."
+  type        = list(string)
+  default     = []
+}
+
+# ============================================
+# Variables específicas de Azure AKS
+# ============================================
+
+variable "location" {
+  description = "Región de Azure donde se desplegará el clúster AKS (requerido para cloud_provider = 'azure')"
+  type        = string
+  default     = ""
+}
+
+variable "resource_group_name" {
+  description = "Nombre del Resource Group de Azure para el clúster AKS (requerido para cloud_provider = 'azure')"
+  type        = string
+  default     = ""
+}
+
+variable "tags" {
+  description = "Tags comunes para todos los recursos"
+  type        = map(string)
+  default = {
+    Project     = "SRI-GitOps-Multicloud"
+    ManagedBy   = "Terraform"
+    Environment = "production"
+  }
+}

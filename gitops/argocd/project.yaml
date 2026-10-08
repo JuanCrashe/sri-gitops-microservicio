@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: sri-facturacion
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Proyecto GitOps del microservicio SRI Facturación (multi-cloud EKS/AKS)
+  sourceRepos:
+    - https://github.com/JuanCrashe/sri-gitops-microservicio.git
+    # Repo Helm de la comunidad Prometheus (Application "monitor")
+    - https://prometheus-community.github.io/helm-charts
+  destinations:
+    # El patrón App-of-Apps requiere que las child Applications vivan en el namespace argocd
+    - server: https://kubernetes.default.svc
+      namespace: argocd
+    - server: https://kubernetes.default.svc
+      namespace: sri-facturacion
+    # Stack de observabilidad (Prometheus + Grafana)
+    - server: https://kubernetes.default.svc
+      namespace: monitoring
+  clusterResourceWhitelist:
+    # kube-prometheus-stack instala CRDs y recursos cluster-scoped (ClusterRole, etc.)
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  orphanedResources:
+    warn: true

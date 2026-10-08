@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-800">Detalle del Contribuyente</h1>
+    </div>
+
+    <!-- Spinner General de Carga Inicial -->
+    <div id="initial-loader" class="flex justify-center items-center py-20">
+        <svg class="animate-spin h-10 w-10 text-sri-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+    </div>
+
+    <!-- Contenedor Principal (Oculto hasta cargar) -->
+    <div id="contribuyente-data" class="hidden space-y-6">
+        
+        <form id="update-form">
+            <div class="bg-white shadow-md rounded-xl overflow-hidden border border-gray-100">
+                <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Información General
+                    </h3>
+                    <span id="badge-estado" class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                        ...
+                    </span>
+                </div>
+                
+                <div class="px-6 py-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <!-- RUC (Readonly) -->
+                        <div>
+                            <label for="ruc" class="block text-sm font-medium text-gray-700">Registro Único de Contribuyentes (RUC)</label>
+                            <input type="text" id="ruc" name="ruc" value="{{ ruc }}" readonly
+                                class="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm focus:outline-none sm:text-sm text-gray-500 cursor-not-allowed">
+                        </div>
+
+                        <!-- Razón Social -->
+                        <div>
+                            <label for="razon_social" class="block text-sm font-medium text-gray-700">Razón Social</label>
+                            <input type="text" id="razon_social" name="razon_social" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sri-blue focus:border-sri-blue sm:text-sm transition">
+                        </div>
+
+                        <!-- Estado RUC -->
+                        <div>
+                            <label for="estado_ruc" class="block text-sm font-medium text-gray-700">Estado del RUC</label>
+                            <select id="estado_ruc" name="estado_ruc" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-sri-blue focus:border-sri-blue sm:text-sm transition">
+                                <option value="ACTIVO">ACTIVO</option>
+                                <option value="SUSPENDIDO">SUSPENDIDO</option>
+                                <option value="PASIVO">PASIVO</option>
+                            </select>
+                        </div>
+
+                        <!-- Tipo de Contribuyente -->
+                        <div>
+                            <label for="tipo_contribuyente" class="block text-sm font-medium text-gray-700">Tipo de Contribuyente</label>
+                            <select id="tipo_contribuyente" name="tipo_contribuyente" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-sri-blue focus:border-sri-blue sm:text-sm transition">
+                                <option value="Persona Natural">Persona Natural</option>
+                                <option value="Sociedad">Sociedad</option>
+                            </select>
+                        </div>
+
+                        <!-- Régimen Impositivo -->
+                        <div class="md:col-span-2">
+                            <label for="regimen_impositivo" class="block text-sm font-medium text-gray-700">Régimen Impositivo</label>
+                            <select id="regimen_impositivo" name="regimen_impositivo" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-sri-blue focus:border-sri-blue sm:text-sm transition">
+                                <option value="RIMPE - Emprendedor">RIMPE - Emprendedor</option>
+                                <option value="RIMPE - Negocio Popular">RIMPE - Negocio Popular</option>
+                                <option value="Régimen General">Régimen General</option>
+                            </select>
+                        </div>
+
+                        <!-- Actividad Económica -->
+                        <div class="md:col-span-2">
+                            <label for="actividad_economica" class="block text-sm font-medium text-gray-700">Actividad Económica Principal</label>
+                            <textarea id="actividad_economica" name="actividad_economica" rows="3" required
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-sri-blue focus:border-sri-blue sm:text-sm transition"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="px-6 py-4 bg-gray-50 flex justify-between items-center border-t border-gray-200">
+                    <div class="text-xs text-gray-500">
+                        Última actualización: <span id="ultima_actualizacion" class="font-medium">---</span>
+                    </div>
+                    <button type="submit" id="update-btn"
+                        class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors items-center">
+                        <span id="update-text">Actualizar Datos</span>
+                        <svg id="update-spinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    // Se utilizará para saber qué ruc cargar en app.js
+    window.CURRENT_RUC = "{{ ruc }}";
+</script>
+{% endblock %}

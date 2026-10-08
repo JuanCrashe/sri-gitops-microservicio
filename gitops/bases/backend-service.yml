@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sri-backend-svc
+  labels:
+    app: sri-backend
+spec:
+  type: ClusterIP
+  selector:
+    app: sri-backend
+  ports:
+    - port: 80
+      targetPort: 5000
+      protocol: TCP
+      name: http

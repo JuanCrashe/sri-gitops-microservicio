@@ -1,0 +1,47 @@
+# docker-compose.yml — Entorno LOCAL de desarrollo/pruebas
+# Uso: docker-compose up --build
+# Requiere: copiar .env.example como .env y llenar los valores reales
+
+services:
+  backend:
+    build:
+      context: ./app/backend
+    ports:
+      - "5000:5000"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-dev}
+      - CLOUD_PROVIDER=local-docker
+      - CLUSTER_NAME=docker-compose
+      - CLOUD_REGION=localhost
+      - ENVIRONMENT=development
+    networks:
+      - sri-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./app/frontend
+    ports:
+      - "8080:8080"
+    environment:
+      - BACKEND_URL=http://backend:5000
+      - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL:-http://localhost:5000}
+      - FLASK_SECRET_KEY=${FLASK_SECRET_KEY:-clave-dev-local}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - sri-network
+    restart: unless-stopped
+
+networks:
+  sri-network:
+    driver: bridge

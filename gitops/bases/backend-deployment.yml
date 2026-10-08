@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sri-backend
+  labels:
+    app: sri-backend
+    component: api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sri-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: sri-backend
+        component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: sri-backend
+          image: sri-backend:latest
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: sri-facturacion-config
+                  key: ENVIRONMENT
+            - name: CLOUD_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: sri-facturacion-config
+                  key: CLOUD_PROVIDER
+            - name: CLUSTER_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: sri-facturacion-config
+                  key: CLUSTER_NAME
+            - name: CLOUD_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: sri-facturacion-config
+                  key: CLOUD_REGION
+            - name: SUPABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: sri-facturacion-config
+                  key: SUPABASE_URL
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3

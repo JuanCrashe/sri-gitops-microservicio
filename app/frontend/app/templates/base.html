@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRI - Gestión de Contribuyentes</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sri: {
+                            blue: '#0c4597',
+                            light: '#1976d2',
+                            dark: '#002171'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        // Global variables for JS
+        window.BACKEND_URL = "{{ backend_url|default('') }}";
+        window.API_TOKEN = "{{ token|default('') }}";
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
+    
+    {% if session.get('token') %}
+    <nav class="bg-sri-blue text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center py-2">
+                    <img src="{{ url_for('static', filename='img/sri-en-linea-logo.png') }}" alt="SRI en línea" class="h-10 md:h-12 object-contain">
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('frontend.detalle') }}" class="hover:text-gray-200 transition">Inicio</a>
+                    <a href="{{ url_for('frontend.logout') }}" class="px-3 py-2 rounded-md text-sm font-medium bg-sri-dark hover:bg-red-600 transition">Cerrar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <!-- Toast Notifications Container -->
+        <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-2"></div>
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center py-4 mt-auto">
+        <p class="text-sm">&copy; 2026 Servicio de Rentas Internas. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sri-facturacion-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    # Se remueve la anotación global healthcheck-path para que el ALB 
+    # use automáticamente la ruta del readinessProbe de cada contenedor
+spec:
+  ingressClassName: alb
+  rules:
+    - host: api.sri.ec.gob.ec
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: sri-backend-svc
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sri-frontend-svc
+                port:
+                  name: http
