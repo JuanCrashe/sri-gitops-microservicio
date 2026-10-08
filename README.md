@@ -65,7 +65,7 @@ flowchart TD
     JobBuild -->|OIDC push| ECR
     JobBuild -->|OIDC push| ACR
     JobBuild --> JobBump
-    JobBump -->|git commit [skip ci]| Repo
+    JobBump -->|"git commit (skip ci)"| Repo
 
     Repo -.->|Pull Deseado| Argo
     Argo -->|Sync Despliegue| EKS
