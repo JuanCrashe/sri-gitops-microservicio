@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sri-facturacion-config
+data:
+  ENVIRONMENT: "development"
+  CLOUD_PROVIDER: "local-docker-desktop"
+  CLUSTER_NAME: "desktop-control-plane"
+  CLOUD_REGION: "localhost"
+  SUPABASE_URL: "https://uqmulkneizbyksquqsrg.supabase.co"
+  BACKEND_URL: "http://sri-backend-svc"

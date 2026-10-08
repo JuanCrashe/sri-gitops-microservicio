@@ -1,0 +1,46 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: sri-facturacion-local
+
+namespace: sri-facturacion
+
+resources:
+  - ../../bases
+
+patches:
+  - path: configmap-patch.yaml
+    target:
+      kind: ConfigMap
+      name: sri-facturacion-config
+  - path: backend-patch.yaml
+    target:
+      kind: Deployment
+      name: sri-backend
+  - path: frontend-patch.yaml
+    target:
+      kind: Deployment
+      name: sri-frontend
+  - patch: |-
+      - op: replace
+        path: /spec/ports
+        value:
+          - name: http
+            port: 8088
+            targetPort: 8080
+            protocol: TCP
+      - op: replace
+        path: /spec/type
+        value: LoadBalancer
+    target:
+      kind: Service
+      name: sri-frontend-svc
+
+images:
+  - name: sri-backend
+    newName: sri-backend
+    newTag: latest
+  - name: sri-frontend
+    newName: sri-frontend
+    newTag: latest

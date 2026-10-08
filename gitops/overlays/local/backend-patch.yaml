@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sri-backend
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - name: sri-backend
+        image: sri-backend:latest
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: sri-facturacion-config
+        - secretRef:
+            name: sri-facturacion-secrets
