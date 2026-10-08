@@ -8,5 +8,5 @@ data:
   CLUSTER_NAME: "desktop-control-plane"
   CLOUD_REGION: "localhost"
   SUPABASE_URL: "https://uqmulkneizbyksquqsrg.supabase.co"
-  BACKEND_URL: "http://sri-backend-svc"
+  BACKEND_URL: "http://sri-backend-svc:5000"
   PUBLIC_BACKEND_URL: "http://localhost:5000"

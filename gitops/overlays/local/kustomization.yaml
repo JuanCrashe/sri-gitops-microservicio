@@ -40,10 +40,6 @@ patches:
       - op: replace
         path: /spec/ports
         value:
-          - name: http
-            port: 80
-            targetPort: 5000
-            protocol: TCP
           - name: api
             port: 5000
             targetPort: 5000
