@@ -9,3 +9,4 @@ data:
   CLOUD_REGION: "localhost"
   SUPABASE_URL: "https://uqmulkneizbyksquqsrg.supabase.co"
   BACKEND_URL: "http://sri-backend-svc"
+  PUBLIC_BACKEND_URL: "http://localhost:5000"

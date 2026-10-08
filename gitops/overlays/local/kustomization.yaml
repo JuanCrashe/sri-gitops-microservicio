@@ -36,6 +36,24 @@ patches:
     target:
       kind: Service
       name: sri-frontend-svc
+  - patch: |-
+      - op: replace
+        path: /spec/ports
+        value:
+          - name: http
+            port: 80
+            targetPort: 5000
+            protocol: TCP
+          - name: api
+            port: 5000
+            targetPort: 5000
+            protocol: TCP
+      - op: replace
+        path: /spec/type
+        value: LoadBalancer
+    target:
+      kind: Service
+      name: sri-backend-svc
 
 images:
   - name: sri-backend
