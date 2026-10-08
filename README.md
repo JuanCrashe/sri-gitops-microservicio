@@ -30,12 +30,6 @@ Sistema de facturación electrónica multi-cloud (AWS + Azure) implementado con 
 - [ ] Fase 5: Validación de portabilidad (Semana 14-16)
 - [ ] Fase 6: Observabilidad (Semana 17-18)
 
-## 👥 Equipo
-
-- **Lead Infrastructure:** Darwin Calle
-- **Lead DevOps:** dacl010811@gmail.com
-- **Lead Platform:** dacl010811@gmail.com
-
 ## 📄 Licencia
 
 MIT License - Ver [LICENSE](LICENSE) para más detalles.
