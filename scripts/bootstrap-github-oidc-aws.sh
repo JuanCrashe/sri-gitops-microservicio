@@ -76,14 +76,13 @@ TRUST_POLICY=$(cat <<EOF
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "${OIDC_AUDIENCE}"
         },
-        # GitHub migro el claim sub a formato con IDs inmutables:
-        #   repo:owner@ID/repo@ID:ref:refs/heads/rama  (el patron viejo
-        #   repo:owner/repo:... ya NO matchea). Se aceptan AMBOS formatos
-        #   (StringLike con array = OR). Verificado via CloudTrail 2026-09-29.
+        # Permitir tanto dacl010811 como JuanCrashe (formato estándar y con ID inmutable):
         "StringLike": {
           "token.actions.githubusercontent.com:sub": [
-            "repo:${GITHUB_REPO}:ref:refs/heads/*",
-            "repo:${GITHUB_REPO%%/*}@*/${GITHUB_REPO##*/}@*:ref:refs/heads/*"
+            "repo:dacl010811/gitops-multicloud:*",
+            "repo:dacl010811@*/gitops-multicloud@*:*",
+            "repo:JuanCrashe/sri-gitops-microservicio:*",
+            "repo:JuanCrashe@*/sri-gitops-microservicio@*:*"
           ]
         }
       }
@@ -115,7 +114,11 @@ ECR_POLICY=$(cat <<EOF
         "ecr:CompleteLayerUpload",
         "ecr:PutImage"
       ],
-      "Resource": "${REPO_ARN}"
+      "Resource": [
+        "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/sri-facturacion-service",
+        "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/sri-backend",
+        "arn:aws:ecr:${REGION}:${ACCOUNT_ID}:repository/sri-frontend"
+      ]
     }
   ]
 }
