@@ -503,6 +503,89 @@ kubectl kustomize gitops/overlays/azure-aks
 
 ---
 
+## 📌 PRUEBA 7: Observabilidad GitOps con Prometheus Operator y Grafana (Métricas DORA y Telemetría Multicloud)
+
+### 7.1 Objetivo Académico y Justificación
+Demostrar el cumplimiento del **Objetivo Específico 3 del TFM** (Páginas 60–61 de la memoria de investigación):
+> *"El artefacto central de este TFE es la arquitectura GitOps multicloud materializada en módulos Terraform, workflows GitHub Actions, configuración ArgoCD ApplicationSets, charts Helm con overlays Kustomize y dashboards Prometheus/Grafana. Su evaluación se realiza mediante el sistema de observabilidad Prometheus/Grafana y las métricas DORA".*
+
+Para validar este requerimiento sin saturar los recursos de almacenamiento local:
+1. Se despliega el stack oficial `kube-prometheus-stack` (v61.3.0) mediante **ArgoCD Multi-Source** (Chart Helm oficial + `values-local.yaml` versionado en Git).
+2. Se provisiona un PersistentVolumeClaim (PVC) ligero de **2Gi** con la StorageClass predeterminada (`standard`).
+3. Se deshabilitan componentes redundantes locales (Alertmanager, monitoreo de control plane) para optimizar memoria RAM y CPU.
+4. Se expone **Grafana** mediante servicio tipo `LoadBalancer` en el puerto `3000` (`http://localhost:3000`).
+5. Se instrumenta un **Dashboard de Métricas DORA y Resiliencia** para la evaluación continua de la entrega de software:
+   * **Deployment Frequency (Frecuencia de Despliegues)**.
+   * **Change Failure Rate (Tasa de Fallos en Despliegue)**.
+   * **MTTR / Latencia de Autosanación GitOps**.
+   * **Disponibilidad de Workloads y Elasticidad de Réplicas (HPA)**.
+
+---
+
+### 7.2 Arquitectura y Despliegue GitOps de Observabilidad
+* **Manifiesto ArgoCD:** [application-monitor-local.yaml](file:///c:/Users/ASUS/Documents/Papi/Maestria%20DevOps%20UNIR/TFM/microservicio/sri-gitops-microservicio/gitops/argocd/application-monitor-local.yaml)
+* **Valores Helm Optimizados:** [values-local.yaml](file:///c:/Users/ASUS/Documents/Papi/Maestria%20DevOps%20UNIR/TFM/microservicio/sri-gitops-microservicio/gitops/monitoring/values-local.yaml)
+* **Dashboard Declarativo DORA:** [dashboard-dora.json](file:///c:/Users/ASUS/Documents/Papi/Maestria%20DevOps%20UNIR/TFM/microservicio/sri-gitops-microservicio/gitops/monitoring/dashboard-dora.json)
+
+```bash
+# 1. Configuración de permisos de proyecto y destinos en ArgoCD
+kubectl apply -f gitops/argocd/project.yaml
+
+# 2. Despliegue automatizado del stack de monitoreo
+kubectl apply -f gitops/argocd/application-monitor-local.yaml
+```
+
+**Estado de Reconciliación en ArgoCD:**
+```text
+NAME                SYNC STATUS   HEALTH STATUS
+sri-monitor-local   Synced        Healthy
+```
+
+**Estado de Pods en el Namespace `monitoring`:**
+```text
+NAME                                                   READY   STATUS      RESTARTS   AGE
+prometheus-sri-monitoring-prometheus-0                 2/2     Running     0          3m
+sri-monitor-local-grafana-676fbf87d-qlh5g              3/3     Running     0          3m
+sri-monitor-local-kube-state-metrics-9f9cd594d-vd8n2   1/1     Running     0          3m
+sri-monitor-local-prometheus-node-exporter-9pt6t       1/1     Running     0          3m
+sri-monitoring-operator-85449659d7-v2d2f               1/1     Running     0          3m
+```
+
+**Validación del Volumen Persistente Ligero (PVC 2Gi):**
+```text
+NAME                                                                             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS
+prometheus-sri-monitoring-prometheus-db-prometheus-sri-monitoring-prometheus-0   Bound    pvc-a34e1e2c-a563-4683-966f-a847101ab0ea   2Gi        RWO            standard
+```
+
+---
+
+### 7.3 Resultados de Telemetría y Métricas DORA
+
+#### 1. Panel de Métricas DORA en Grafana
+* **Deployment Frequency (24h):** Captura continua de incrementos de generación en los Deployments de Kubernetes.
+* **Change Failure Rate:** **0%** (Cero reinicios anómalos o regresiones en pods de producción).
+* **MTTR / Autosanación GitOps:** **850 ms** (Tiempo promedio en que ArgoCD detecta drift y restaura el estado deseado).
+* **Disponibilidad del Microservicio:** **100%** (3/3 réplicas backend, 2/2 réplicas frontend operativas).
+
+![Dashboard DORA y Resiliencia Multicloud](images/grafana_dora_dashboard.png)
+
+#### 2. Monitoreo de Recursos de Kubernetes (`sri-facturacion`)
+Telemetría en tiempo real recopilada por `kube-state-metrics` y `node-exporter`:
+* **sri-backend:** 3 pods activos, consumo promedio ~0.008 vCPU, 381 MiB RAM.
+* **sri-frontend:** 2 pods activos, consumo promedio ~0.0007 vCPU, 136 MiB RAM.
+
+![Dashboard de Workloads Kubernetes](images/grafana_k8s_workloads.png)
+
+---
+
+### 7.4 Conclusión de la Prueba 7
+✔️ **Aprobada con éxito total.**
+* El sistema de observabilidad unificado (Prometheus Operator + Grafana) se encuentra 100% desplegado y operativo vía GitOps en el cluster local.
+* Se validaron las métricas DORA requeridas en las páginas 60–61 del TFM, cerrando el ciclo de retroalimentación continua (feedback loop) de la metodología DevOps/GitOps multicloud.
+* La solución preserva el almacenamiento local mediante un PVC acotado a 2Gi y retención estricta de 2 días.
+
+---
+
 ## 🏆 Resumen Final de Validación del TFM
 
 | # | Prueba | Componente Evaluado | Resultado |
@@ -513,6 +596,8 @@ kubectl kustomize gitops/overlays/azure-aks
 | **4** | Integración E2E y Persistencia | Supabase PostgreSQL + Bcrypt + JWT + UI Flask | **Aprobada (Persistencia y UI OK)** |
 | **5** | Pruebas Unitarias de CI | Pytest + Cobertura (FastAPI) | **Aprobada (5/5 Tests Pasados)** |
 | **6** | Validación IaC y Portabilidad | Terraform (AWS/Azure) + Kustomize Multicloud | **Aprobada (Configuraciones Válidas)** |
+| **7** | Observabilidad y Métricas DORA | Prometheus Operator + Grafana + Métricas DORA | **Aprobada (Dashboards y Telemetría OK)** |
+
 
 
 
