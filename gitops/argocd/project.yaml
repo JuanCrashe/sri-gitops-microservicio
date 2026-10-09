@@ -17,9 +17,13 @@ spec:
       namespace: argocd
     - server: https://kubernetes.default.svc
       namespace: sri-facturacion
-    # Stack de observabilidad (Prometheus + Grafana)
+    # Stack de observabilidad (Prometheus + Grafana) y componentes del cluster
     - server: https://kubernetes.default.svc
       namespace: monitoring
+    - server: https://kubernetes.default.svc
+      namespace: kube-system
+    - server: https://kubernetes.default.svc
+      namespace: "*"
   clusterResourceWhitelist:
     # kube-prometheus-stack instala CRDs y recursos cluster-scoped (ClusterRole, etc.)
     - group: "*"
