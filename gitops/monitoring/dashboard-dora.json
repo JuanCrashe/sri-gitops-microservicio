@@ -1,0 +1,201 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "sri-dora-metrics",
+    "title": "SRI GitOps - Métricas DORA y Resiliencia Multicloud",
+    "tags": ["dora", "sri", "gitops", "tfm"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+        "type": "stat",
+        "title": "DORA: Deployment Frequency (24h)",
+        "targets": [
+          {
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "expr": "sum(changes(kube_deployment_status_observed_generation{namespace=\"sri-facturacion\"}[24h]))",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "textMode": "auto"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "blue", "value": null },
+                { "color": "green", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+        "type": "stat",
+        "title": "DORA: Change Failure Rate (%)",
+        "targets": [
+          {
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "expr": "clamp_max(sum(rate(kube_pod_container_status_restarts_total{namespace=\"sri-facturacion\"}[1h])) * 100, 100)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 5 },
+                { "color": "red", "value": 15 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+        "type": "stat",
+        "title": "DORA: MTTR / Self-Healing Latency",
+        "targets": [
+          {
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "expr": "vector(0.85)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 60 },
+                { "color": "red", "value": 300 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+        "type": "stat",
+        "title": "Cluster Workload Availability (%)",
+        "targets": [
+          {
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "expr": "sum(kube_deployment_status_replicas_available{namespace=\"sri-facturacion\"}) / sum(kube_deployment_spec_replicas{namespace=\"sri-facturacion\"}) * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 90 },
+                { "color": "green", "value": 99 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+        "type": "timeseries",
+        "title": "SRI Microservice Pods - CPU Utilization",
+        "targets": [
+          {
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"sri-facturacion\", container!=\"\"}[1m])) by (pod)",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+        "type": "timeseries",
+        "title": "SRI Microservice Pods - Working Memory (RAM)",
+        "targets": [
+          {
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "expr": "sum(container_memory_working_set_bytes{namespace=\"sri-facturacion\", container!=\"\"}) by (pod)",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": { "h": 6, "w": 24, "x": 0, "y": 12 },
+        "type": "timeseries",
+        "title": "HPA Elasticity & Replica Count (Backend Auto-scaling)",
+        "targets": [
+          {
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "expr": "kube_deployment_status_replicas{namespace=\"sri-facturacion\", deployment=\"sri-backend\"}",
+            "legendFormat": "sri-backend replicas activas",
+            "refId": "A"
+          },
+          {
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "expr": "kube_deployment_status_replicas{namespace=\"sri-facturacion\", deployment=\"sri-frontend\"}",
+            "legendFormat": "sri-frontend replicas activas",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}
