@@ -14,6 +14,8 @@
 4. [Prueba 4: Integración E2E y Persistencia en Supabase PostgreSQL](#-prueba-4-integración-e2e-y-persistencia-en-supabase-postgresql)
 5. [Prueba 5: Pipeline de Pruebas Unitarias de CI (Pytest & Cobertura)](#-prueba-5-pipeline-de-pruebas-unitarias-de-ci-pytest--cobertura)
 6. [Prueba 6: Validación Sintáctica de IaC y Kustomize Agnóstico](#-prueba-6-validación-sintáctica-de-iac-y-kustomize-agnóstico)
+7. [Prueba 7: Observabilidad GitOps con Prometheus Operator y Grafana (Métricas DORA)](#-prueba-7-observabilidad-gitops-con-prometheus-operator-y-grafana-métricas-dora-y-telemetría-multicloud)
+8. [Prueba 8: Despliegue GitOps Automatizado y RollingUpdate v1.1.0](#-prueba-8-despliegue-gitops-automatizado-y-rollingupdate-v110)
 
 ---
 
@@ -586,6 +588,63 @@ Telemetría en tiempo real recopilada por `kube-state-metrics` y `node-exporter`
 
 ---
 
+---
+
+## 📌 PRUEBA 8: Despliegue GitOps Automatizado y RollingUpdate v1.1.0
+
+### 8.1 Objetivo Académico y Justificación
+Demostrar el ciclo completo de **Continuous Delivery / GitOps** bajo principios de SSOT (*Single Source of Truth*):
+1. **Modificación de Código:** Actualización de la versión a `1.1.0` en Backend y Frontend con nuevo formato de telemetría Prometheus en `/metrics`.
+2. **Empaquetado Inmutable:** Generación de imágenes Docker con tags semánticos inmutables (`sri-backend:v1.1.0` y `sri-frontend:v1.1.0`).
+3. **Disparador Git:** El commit `f192208` en la rama `main` de GitHub es detectado automáticamente por ArgoCD, iniciando la reconciliación declarativa.
+4. **Despliegue Progresivo Zero-Downtime:** `RollingUpdate` con `maxSurge: 1` y `maxUnavailable: 0` sustituye pods pod a pod garantizando disponibilidad ininterrumpida.
+5. **Cierre del Ciclo de Observabilidad:** La frecuencia de despliegue (DORA Deployment Frequency) se incrementa automáticamente en Grafana y Prometheus descubre la nueva métrica `sri_backend_version_info{version="1.1.0"}`.
+
+---
+
+### 8.2 Evidencia del RollingUpdate en Kubernetes
+```text
+Waiting for deployment "sri-backend" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "sri-backend" rollout to finish: 1 old replicas are pending termination...
+deployment "sri-backend" successfully rolled out
+deployment "sri-frontend" successfully rolled out
+```
+
+**Estado de Pods Reconciliados:**
+```text
+NAME                            IMAGE                 STATUS
+sri-backend-7f78bd9c4c-47bsw    sri-backend:v1.1.0    Running
+sri-backend-7f78bd9c4c-bdvhr    sri-backend:v1.1.0    Running
+sri-backend-7f78bd9c4c-wmgqj    sri-backend:v1.1.0    Running
+sri-frontend-7448557746-2bqhg   sri-frontend:v1.1.0   Running
+sri-frontend-7448557746-dh9z9   sri-frontend:v1.1.0   Running
+```
+
+---
+
+### 8.3 Resultados de Telemetría y Métricas DORA
+* **DORA Deployment Frequency (24h):** Incremento automático a **3** despliegues registrados en Grafana.
+* **DORA Change Failure Rate:** **0.00%** (Cero reinicios o fallas tras el rollout).
+* **Métrica Prometheus:** `sri_backend_version_info{version="1.1.0",release="gitops-automated-rollout"} = 1`.
+* **Telemetría HPA en Grafana:** Captura del pico de réplicas a **4** durante el `maxSurge` de la estrategia de RollingUpdate.
+
+![Grafana DORA Rollout v1.1.0](images/grafana_dora_rollout_v110.png)
+
+---
+
+### 8.4 Verificación Funcional de la Interfaz Web y Persistencia
+* **Login con Distintivo v1.1.0:**
+  ![Login v1.1.0](images/frontend_login_v110.png)
+* **Dashboard con Navbar v1.1.0 y Notificación Toast:**
+  ![Toast Actualización](images/frontend_update_toast_v110.png)
+
+---
+
+### 8.5 Conclusión de la Prueba 8
+✔️ **Aprobada con éxito total.** Se comprobó que el flujo GitOps es 100% autónomo y trazable: el commit en Git actualiza la infraestructura en clúster sin caídas y queda registrado de forma inmediata en las métricas de observabilidad. Documentación detallada complementaria disponible en [docs/VALIDACION_GITOPS_ROLLOUT.md](file:///c:/Users/ASUS/Documents/Papi/Maestria%20DevOps%20UNIR/TFM/microservicio/sri-gitops-microservicio/docs/VALIDACION_GITOPS_ROLLOUT.md).
+
+---
+
 ## 🏆 Resumen Final de Validación del TFM
 
 | # | Prueba | Componente Evaluado | Resultado |
@@ -597,6 +656,8 @@ Telemetría en tiempo real recopilada por `kube-state-metrics` y `node-exporter`
 | **5** | Pruebas Unitarias de CI | Pytest + Cobertura (FastAPI) | **Aprobada (5/5 Tests Pasados)** |
 | **6** | Validación IaC y Portabilidad | Terraform (AWS/Azure) + Kustomize Multicloud | **Aprobada (Configuraciones Válidas)** |
 | **7** | Observabilidad y Métricas DORA | Prometheus Operator + Grafana + Métricas DORA | **Aprobada (Dashboards y Telemetría OK)** |
+| **8** | Despliegue GitOps y RollingUpdate | Git Commit -> ArgoCD AutoSync -> RollingUpdate v1.1.0 | **Aprobada (Rollout y DORA OK)** |
+
 
 
 
