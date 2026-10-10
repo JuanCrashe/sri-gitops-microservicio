@@ -12,7 +12,7 @@ START_TIME = time.time()
 app = FastAPI(
     title="Microservicio SRI",
     description="API de Gestión de Contribuyentes",
-    version="1.1.0"
+    version="1.2.0"
 )
 
 # Configurar CORS (necesario si el frontend accede directamente o desde otro origen)
@@ -31,7 +31,7 @@ async def root():
     """Endpoint raíz"""
     return {
         "message": "SRI Facturación Service API",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "status": "running"
     }
 
@@ -40,7 +40,7 @@ async def health_check():
     """Health check para Kubernetes liveness probe"""
     return {
         "status": "healthy",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "hostname": socket.gethostname()
     }
@@ -63,7 +63,7 @@ async def metrics():
         "sri_backend_up 1\n"
         "# HELP sri_backend_version_info Informacion de version del microservicio\n"
         "# TYPE sri_backend_version_info gauge\n"
-        'sri_backend_version_info{version="1.1.0",release="gitops-automated-rollout"} 1\n'
+        'sri_backend_version_info{version="1.2.0",release="gitops-automated-rollout"} 1\n'
         "# HELP sri_backend_uptime_seconds Segundos de actividad acumulados\n"
         "# TYPE sri_backend_uptime_seconds counter\n"
         f"sri_backend_uptime_seconds {uptime}\n"
@@ -80,7 +80,7 @@ async def get_version(request: Request):
     cluster_name = os.getenv("CLUSTER_NAME", "unknown")
     
     return {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "release": "gitops-automated-rollout",
         "cloud": cloud_provider,
         "cluster": cluster_name,
