@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
       - name: sri-frontend
-        image: sri-frontend:latest
+        image: sri-frontend:v1.1.0
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:

@@ -54,7 +54,7 @@ patches:
 images:
   - name: sri-backend
     newName: sri-backend
-    newTag: latest
+    newTag: v1.1.0
   - name: sri-frontend
     newName: sri-frontend
-    newTag: latest
+    newTag: v1.1.0

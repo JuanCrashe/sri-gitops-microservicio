@@ -61,8 +61,9 @@
         <div class="w-full md:w-4/12 bg-sri-blue flex flex-col justify-center items-center p-8 lg:p-12 shadow-2xl z-10 relative">
             
             <!-- Logo area -->
-            <div class="mb-10 w-full flex justify-center">
+            <div class="mb-8 w-full flex flex-col items-center">
                 <img src="{{ url_for('static', filename='img/sri-en-linea-logo.png') }}" alt="SRI en línea" class="h-16 md:h-20 object-contain">
+                <span class="mt-2 bg-emerald-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow tracking-wide">v1.1.0 GitOps Live</span>
             </div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
