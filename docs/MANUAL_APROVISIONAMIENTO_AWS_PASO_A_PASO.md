@@ -18,28 +18,28 @@ Está diseñado específicamente para:
 ## 🗺️ Mapa de Fases del Aprovisionamiento
 
 ```
-[FASE 1: PREPARACIÓN LOCAL & CREDENCIALES] ✅ COMPLETADA
+[FASE 1: PREPARACIÓN LOCAL & CREDENCIALES]   ✅ COMPLETADA
                         │
                         ▼
-[FASE 2: RECURSOS BASE S3 / ECR]           ✅ COMPLETADA
+[FASE 2: RECURSOS BASE S3 / ECR]             ✅ COMPLETADA
                         │
                         ▼
-[FASE 3: TERRAFORM APPLY (CLÚSTER EKS)]    ✅ COMPLETADA (9/9 RECURSOS - 3 NODOS READY)
+[FASE 3: TERRAFORM APPLY (CLÚSTER EKS)]      ✅ COMPLETADA (9/9 RECURSOS - 3 NODOS READY)
                         │
                         ▼
-[FASE 4: KUBECTL & CONTROLLERS (ALB/CSI)]  ✅ COMPLETADA (METRICS, ARGOCD, CSI, ALB)
+[FASE 4: KUBECTL & CONTROLLERS (ALB/CSI)]    ✅ COMPLETADA (METRICS, ARGOCD, CSI, ALB)
                         │
                         ▼
-[FASE 5: PARÁMETROS SSM & IMÁGENES ECR]    🟡 EN PROCESO (SECRETOS SSM LISTOS)
+[FASE 5: PARÁMETROS SSM & IMÁGENES ECR]      ✅ COMPLETADA (SECRETOS SSM & ECR IMAGES)
                         │
                         ▼
-[FASE 6: GITOPS ARGOCD & APLICACIÓN EN VIVO] ⏳ SIGUIENTE PASO
+[FASE 6: GITOPS ARGOCD & APLICACIÓN EN VIVO] ✅ COMPLETADA (ALB ACTIVO & SYNCED)
                         │
                         ▼
-[FASE 7: DEMO 5 MINUTOS & GRABACIÓN]       ⏳ PENDIENTE
+[FASE 7: DEMO 5 MINUTOS & GRABACIÓN]         🎬 LISTA PARA GRABAR AHORA
                         │
                         ▼
-[FASE 8: FINOPS TEARDOWN LIMPIO ($0.00/h)] ⏳ PENDIENTE
+[FASE 8: FINOPS TEARDOWN LIMPIO ($0.00/h)]   🛑 PROTOCOLO LISTO (EJECUTAR TRAS VIDEO)
 ```
 
 ---
@@ -235,18 +235,191 @@ docker push 640110193767.dkr.ecr.us-east-1.amazonaws.com/sri-frontend:latest
 
 ---
 
-## 🚀 Fase 6: Despliegue GitOps con ArgoCD
+## 🚀 Fase 6: Despliegue GitOps con ArgoCD (Completada)
 
-Una vez publicadas las imágenes, se lanza la aplicación en el clúster EKS:
+### 6.1 Asegurar Contexto de Kubectl en EKS
+Es fundamental verificar que el contexto apunte al clúster de AWS y no a Docker Desktop local:
+```powershell
+kubectl config use-context arn:aws:eks:us-east-1:640110193767:cluster/sri-eks-cluster
+```
+
+### 6.2 Aplicar Manifiestos de ArgoCD
 ```powershell
 kubectl apply -f gitops/argocd/project.yaml
 kubectl apply -f gitops/argocd/application-aws-eks.yaml
 ```
-ArgoCD tomará el control automático:
-* Desplegará `sri-backend` (3 réplicas) y `sri-frontend` (3 réplicas).
-* Montará los secretos vía CSI Driver desde SSM.
-* El AWS Load Balancer Controller creará el ALB en AWS apuntando a los pods.
+
+### 6.3 Verificación de Sincronización y Estado de Pods
+```powershell
+kubectl get application -n argocd sri-facturacion-aws-eks
+kubectl get pods -n sri-facturacion -o wide
+```
+* **Estado Obtenido:**
+  * **ArgoCD:** `Synced` y `Healthy`.
+  * **Backend:** 3 réplicas en estado `1/1 Running` distribuidas entre los 3 nodos de EKS.
+  * **Frontend:** 3 réplicas en estado `1/1 Running` distribuidas entre los 3 nodos de EKS.
+  * **HPA:** `sri-backend-hpa` activo y monitoreando métricas con umbrales del 70% CPU y 80% RAM.
+
+### 6.4 Obtención del DNS Público del Application Load Balancer (ALB)
+```powershell
+kubectl get ingress -n sri-facturacion
+```
+* **Salida Obtenida:**
+```text
+NAME                      CLASS   HOSTS               ADDRESS                                                                  PORTS   AGE
+sri-facturacion-ingress   alb     api.sri.ec.gob.ec   k8s-srifactu-srifactu-a08031345f-400946508.us-east-1.elb.amazonaws.com   80      2m
+```
+
+### 6.5 Verificación de Salud en AWS ALB Target Groups
+```powershell
+# Verificar estado de los targets (Pods IP) en AWS
+aws elbv2 describe-target-health --target-group-arn <FRONTEND_TG_ARN>
+aws elbv2 describe-target-health --target-group-arn <BACKEND_TG_ARN>
+```
+* **Resultado:** Los 6 targets (3 frontend + 3 backend) se encuentran en estado `healthy`.
+
+### 6.6 Pruebas de Conectividad End-to-End
+```powershell
+# 1. Probar carga del Frontend (Retorna HTTP 302 -> /login y renderiza el portal SRI)
+curl.exe -I -s http://k8s-srifactu-srifactu-a08031345f-400946508.us-east-1.elb.amazonaws.com
+
+# 2. Probar autenticación API mediante POST /api/v1/auth/login
+curl.exe -s -X POST "http://k8s-srifactu-srifactu-a08031345f-400946508.us-east-1.elb.amazonaws.com/api/v1/auth/login" `
+  -H "Content-Type: application/x-www-form-urlencoded" `
+  -d "username=1790011674001&password=1234"
+
+# 3. Probar consulta de contribuyente contra la base Supabase mediante el JWT generado
+$token = (curl.exe -s -X POST "http://k8s-srifactu-srifactu-a08031345f-400946508.us-east-1.elb.amazonaws.com/api/v1/auth/login" -H "Content-Type: application/x-www-form-urlencoded" -d "username=1790011674001&password=1234" | ConvertFrom-Json).access_token
+curl.exe -s -H "Authorization: Bearer $token" "http://k8s-srifactu-srifactu-a08031345f-400946508.us-east-1.elb.amazonaws.com/api/v1/contribuyente/1790011674001"
+```
+* **Respuesta JSON de Supabase en vivo:**
+```json
+{
+  "ruc": "1790011674001",
+  "razon_social": "CORPORACION FAVORITA C.A.",
+  "estado_ruc": "ACTIVO",
+  "tipo_contribuyente": "Sociedad",
+  "regimen_impositivo": "Régimen General",
+  "actividad_economica": "Venta al por mayor y menor de productos de supermercado...",
+  "ultima_actualizacion": "2026-10-10T04:14:36.36294+00:00"
+}
+```
 
 ---
 
-*(Fases 7 y 8 de Demo y Teardown se documentarán tras el despliegue).*
+## 🎬 Fase 7: Guión de Grabación para la Defensa del TFM (5 Minutos)
+
+El objetivo de este video es demostrar la orquestación real en AWS EKS, la entrega continua GitOps, la inyección segura de secretos y la alta disponibilidad.
+
+### ⏱️ Cronograma Minuto a Minuto:
+
+* **Minuto 0:00 - 1:00 | Introducción y Arquitectura en AWS:**
+  * Mostrar terminal con los 3 nodos EKS corriendo en AWS:
+    ```powershell
+    kubectl get nodes -o wide
+    ```
+  * Mostrar que los nodos son instancias EC2 `t3.medium` en `us-east-1` ejecutando Kubernetes `v1.35.8`.
+  * Explicar que la infraestructura fue declarada con Terraform y utiliza roles IAM con OIDC (IRSA).
+
+* **Minuto 1:00 - 2:00 | GitOps con ArgoCD y Secretos CSI:**
+  * Mostrar el estado de ArgoCD:
+    ```powershell
+    kubectl get application -n argocd sri-facturacion-aws-eks
+    ```
+  * Mostrar los pods en `sri-facturacion`:
+    ```powershell
+    kubectl get pods -n sri-facturacion -o wide
+    ```
+  * Explicar cómo el CSI Driver de AWS Secrets Store inyecta los secretos desde AWS Systems Manager Parameter Store directamente a memoria en los pods sin almacenar tokens en Git:
+    ```powershell
+    kubectl get secretproviderclass -n sri-facturacion
+    ```
+
+* **Minuto 2:00 - 3:30 | Demostración Web en Vivo (ALB Ingress):**
+  * Abrir el navegador en la URL pública del Application Load Balancer:
+    `http://k8s-srifactu-srifactu-a08031345f-400946508.us-east-1.elb.amazonaws.com`
+  * Iniciar sesión en el portal SRI:
+    * **RUC:** `1790011674001`
+    * **Contraseña:** `1234`
+  * Demostrar la consulta y visualización de la empresa **CORPORACION FAVORITA C.A.** conectada directamente a la persistencia PostgreSQL en Supabase.
+
+* **Minuto 3:30 - 4:30 | Resiliencia y Autocuración (Self-Healing):**
+  * En la terminal, simular la caída de un pod en caliente:
+    ```powershell
+    kubectl delete pod -n sri-facturacion -l app=sri-frontend --wait=false
+    ```
+  * Mostrar cómo Kubernetes y el ReplicaSet reemplazan inmediatamente el contenedor en segundos sin pérdida de servicio.
+
+* **Minuto 4:30 - 5:00 | Conclusiones y Cumplimiento de Objetivos:**
+  * Resaltar:
+    1. Desacoplamiento total Frontend/Backend.
+    2. Cero secretos en texto plano (Zero Trust).
+    3. Entrega continua declarativa con GitOps.
+    4. Portabilidad y preparación multicloud.
+
+---
+
+## 🛑 Fase 8: Protocolo de Destrucción Limpia FinOps ($0.00/h)
+
+> [!CAUTION]
+> **ORDEN CRÍTICO:** En AWS, si se destruye el clúster EKS antes de destruir el Ingress, el Application Load Balancer y los Security Groups dinámicos quedan **huérfanos**, generando cobros continuos en la factura. Siga estrictamente este orden.
+
+### Paso 8.1: Eliminar Ingress y Aplicación ArgoCD (Desmantela el ALB)
+```powershell
+# 1. Eliminar la aplicación de ArgoCD
+kubectl delete application -n argocd sri-facturacion-aws-eks --cascade=foreground
+
+# 2. Asegurar la eliminación del Ingress
+kubectl delete ingress -n sri-facturacion sri-facturacion-ingress --ignore-not-found=true
+
+# 3. Eliminar el namespace de la aplicación
+kubectl delete namespace sri-facturacion --ignore-not-found=true
+```
+
+### Paso 8.2: Verificar que el Load Balancer fue eliminado en AWS
+```powershell
+# Debe retornar una tabla vacía una vez desaprovisionado el ALB
+aws elbv2 describe-load-balancers --query "LoadBalancers[*].[LoadBalancerName,State.Code]" --output table
+```
+
+### Paso 8.3: Destruir Controladores Helm
+```powershell
+$env:PATH += ";C:\Users\ASUS\AppData\Local\Microsoft\WinGet\Packages\Helm.Helm_Microsoft.Winget.Source_8wekyb3d8bbwe\windows-amd64"
+helm uninstall aws-load-balancer-controller -n kube-system
+helm uninstall secrets-store-csi-driver -n kube-system
+```
+
+### Paso 8.4: Destruir Infraestructura con Terraform
+Ejecutar `terraform destroy` en orden inverso de dependencias:
+
+```powershell
+# 1. Destruir IAM y configuraciones de Load Balancer Controller
+cd "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\iac\aws\lb-controller"
+terraform destroy -auto-approve
+
+# 2. Destruir IAM y recursos de Secrets CSI
+cd "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\iac\aws\secrets-csi"
+terraform destroy -auto-approve
+
+# 3. Destruir el Clúster EKS y los Nodos Workers
+cd "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\iac\aws"
+terraform destroy -auto-approve
+```
+
+### Paso 8.5: Limpiar Parámetros SSM (Opcional si se desea borrar secretos)
+```powershell
+aws ssm delete-parameters --names "/sri-facturacion/SUPABASE_KEY" "/sri-facturacion/JWT_SECRET" "/sri-facturacion/FLASK_SECRET_KEY" --region us-east-1
+```
+
+### Paso 8.6: Verificación Final de Facturación Cero en AWS
+```powershell
+# 1. Verificar instancias EC2 (deben estar todas en 'terminated')
+aws ec2 describe-instances --query "Reservations[*].Instances[*].[InstanceId,State.Name]" --output table
+
+# 2. Verificar clústeres EKS (debe retornar vacío)
+aws eks list-clusters --output table
+
+# 3. Verificar Load Balancers (debe retornar vacío)
+aws elbv2 describe-load-balancers --output table
+```
+Al finalizar este procedimiento, el consumo horario en la cuenta AWS vuelve a **$0.00/h**.
