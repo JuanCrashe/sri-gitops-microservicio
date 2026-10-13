@@ -21,9 +21,9 @@ variable "cluster_name" {
 }
 
 variable "kubernetes_version" {
-  description = "Versión de Kubernetes"
+  description = "Versión de Kubernetes compatible con AKS"
   type        = string
-  default     = "1.37"
+  default     = "1.30"
 }
 
 variable "environment" {
@@ -33,9 +33,9 @@ variable "environment" {
 }
 
 variable "node_count" {
-  description = "Número de nodos del default node pool"
+  description = "Número de nodos del default node pool (optimizado a 2 para Azure for Students)"
   type        = number
-  default     = 3
+  default     = 2
 }
 
 variable "node_instance_type" {
