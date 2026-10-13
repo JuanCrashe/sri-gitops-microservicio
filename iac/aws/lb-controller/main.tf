@@ -20,7 +20,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "sri-gitops-tfstate"
+    bucket       = "sri-gitops-tfstate-640110193767"
     key          = "aws/lb-controller.tfstate"
     region       = "us-east-1"
     encrypt      = true

@@ -10,7 +10,7 @@
         "ssm:GetParametersByPath"
       ],
       "Resource": [
-        "arn:aws:ssm:us-east-1:053044806920:parameter/sri-facturacion/*"
+        "arn:aws:ssm:us-east-1:640110193767:parameter/sri-facturacion/*"
       ]
     },
     {

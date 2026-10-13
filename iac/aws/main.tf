@@ -16,7 +16,7 @@ terraform {
   # Estado remoto en S3 con locking nativo (use_lockfile).
   # Requiere Terraform >= 1.10. El bucket debe existir antes de 'init'.
   backend "s3" {
-    bucket      = "sri-gitops-tfstate"
+    bucket      = "sri-gitops-tfstate-640110193767"
     key         = "aws/terraform.tfstate"
     region      = "us-east-1"
     encrypt     = true

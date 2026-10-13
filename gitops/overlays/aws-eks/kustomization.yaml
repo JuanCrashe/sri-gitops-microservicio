@@ -32,10 +32,10 @@ patches:
 
 images:
 - name: sri-backend
-  newName: 053044806920.dkr.ecr.us-east-1.amazonaws.com/sri-backend
+  newName: 640110193767.dkr.ecr.us-east-1.amazonaws.com/sri-backend
   newTag: latest
 - name: sri-frontend
-  newName: 053044806920.dkr.ecr.us-east-1.amazonaws.com/sri-frontend
+  newName: 640110193767.dkr.ecr.us-east-1.amazonaws.com/sri-frontend
   newTag: latest
 
 commonLabels:
