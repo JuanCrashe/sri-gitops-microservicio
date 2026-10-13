@@ -8,3 +8,4 @@ data:
   CLOUD_REGION: "us-east-1"
   ENVIRONMENT: "production"
   SUPABASE_URL: "https://uqmulkneizbyksquqsrg.supabase.co"
+  PUBLIC_BACKEND_URL: ""

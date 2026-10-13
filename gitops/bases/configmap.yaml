@@ -15,3 +15,4 @@ data:
   SUPABASE_URL: "https://<tu-id>.supabase.co" # El valor real puede ir en overlay o local, no es 100% secreto pero lo ponemos como default
   # Frontend config
   BACKEND_URL: "http://sri-backend-svc"
+  PUBLIC_BACKEND_URL: ""
