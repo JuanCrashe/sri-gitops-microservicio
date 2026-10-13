@@ -11,6 +11,22 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: sri-backend-svc
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sri-frontend-svc
+                port:
+                  name: http
     - host: api.sri.ec.gob.ec
       http:
         paths:
