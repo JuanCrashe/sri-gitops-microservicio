@@ -36,7 +36,7 @@ images:
   newTag: latest
 - name: sri-frontend
   newName: 640110193767.dkr.ecr.us-east-1.amazonaws.com/sri-frontend
-  newTag: latest
+  newTag: v1.3.0
 
 commonLabels:
   cloud: aws-eks

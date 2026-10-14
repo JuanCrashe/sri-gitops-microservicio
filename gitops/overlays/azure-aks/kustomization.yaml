@@ -33,7 +33,7 @@ images:
     newTag: latest
   - name: sri-frontend
     newName: sriacrtfm1acd.azurecr.io/sri-frontend
-    newTag: latest
+    newTag: v1.3.0
 
 commonLabels:
   cloud: azure-aks
