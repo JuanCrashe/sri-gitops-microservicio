@@ -7,33 +7,33 @@ metadata:
 namespace: sri-facturacion
 
 resources:
-  - ../../bases
+- ../../bases
 
 patches:
-  - path: configmap-patch.yaml
-    target:
-      kind: ConfigMap
-      name: sri-facturacion-config
-  - path: backend-secrets-patch.yaml
-    target:
-      kind: Deployment
-      name: sri-backend
-  - path: frontend-secrets-patch.yaml
-    target:
-      kind: Deployment
-      name: sri-frontend
-  - path: frontend-service-patch.yaml
-    target:
-      kind: Service
-      name: sri-frontend-svc
+- path: configmap-patch.yaml
+  target:
+    kind: ConfigMap
+    name: sri-facturacion-config
+- path: backend-secrets-patch.yaml
+  target:
+    kind: Deployment
+    name: sri-backend
+- path: frontend-secrets-patch.yaml
+  target:
+    kind: Deployment
+    name: sri-frontend
+- path: frontend-service-patch.yaml
+  target:
+    kind: Service
+    name: sri-frontend-svc
 
 images:
-  - name: sri-backend
-    newName: sriacrtfm1acd.azurecr.io/sri-backend
-    newTag: latest
-  - name: sri-frontend
-    newName: sriacrtfm1acd.azurecr.io/sri-frontend
-    newTag: v1.3.0
+- name: sri-backend
+  newName: sriacrtfm1acd.azurecr.io/sri-backend
+  newTag: 95a0dcbc9c2406c3f495ba0f606cee8ead1706fb
+- name: sri-frontend
+  newName: sriacrtfm1acd.azurecr.io/sri-frontend
+  newTag: 95a0dcbc9c2406c3f495ba0f606cee8ead1706fb
 
 commonLabels:
   cloud: azure-aks

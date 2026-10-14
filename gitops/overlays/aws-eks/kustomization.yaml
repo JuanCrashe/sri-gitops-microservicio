@@ -27,16 +27,16 @@ patches:
     name: sri-frontend
 - path: hpa-patch.yaml
   target:
-     kind: HorizontalPodAutoscaler
-     name: sri-backend-hpa
+    kind: HorizontalPodAutoscaler
+    name: sri-backend-hpa
 
 images:
 - name: sri-backend
   newName: 640110193767.dkr.ecr.us-east-1.amazonaws.com/sri-backend
-  newTag: latest
+  newTag: 95a0dcbc9c2406c3f495ba0f606cee8ead1706fb
 - name: sri-frontend
   newName: 640110193767.dkr.ecr.us-east-1.amazonaws.com/sri-frontend
-  newTag: v1.3.0
+  newTag: 95a0dcbc9c2406c3f495ba0f606cee8ead1706fb
 
 commonLabels:
   cloud: aws-eks
