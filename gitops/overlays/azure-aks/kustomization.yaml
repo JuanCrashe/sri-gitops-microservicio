@@ -27,10 +27,10 @@ patches:
 
 images:
 - name: sri-backend
-  newName: sriacrtfm23c5.azurecr.io/sri-backend
+  newName: sriacrtfm1acd.azurecr.io/sri-backend
   newTag: latest
 - name: sri-frontend
-  newName: sriacrtfm23c5.azurecr.io/sri-frontend
+  newName: sriacrtfm1acd.azurecr.io/sri-frontend
   newTag: latest
 
 commonLabels:

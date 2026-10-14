@@ -5,7 +5,7 @@
 variable "location" {
   description = "Región de Azure donde se desplegará el clúster AKS"
   type        = string
-  default     = "eastus"
+  default     = "canadacentral"
 }
 
 variable "resource_group_name" {

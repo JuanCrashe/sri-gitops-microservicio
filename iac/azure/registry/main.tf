@@ -20,7 +20,7 @@ terraform {
   # key DEDICADA: un destroy del cluster jamas toca este state).
   backend "azurerm" {
     resource_group_name  = "sri-tfstate-rg"
-    storage_account_name = "sritfstate23c5"
+    storage_account_name = "sritfstate1acd"
     container_name       = "tfstate"
     key                  = "azure/registry.tfstate"
   }

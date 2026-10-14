@@ -5,5 +5,5 @@ metadata:
 data:
   CLOUD_PROVIDER: "azure"
   CLUSTER_NAME: "sri-aks-cluster"
-  CLOUD_REGION: "eastus"
+  CLOUD_REGION: "canadacentral"
   ENVIRONMENT: "production"

@@ -84,24 +84,23 @@ az login
 ```powershell
 az account show --output table
 ```
-* **Qué verificar:**
-  * `Name`: Debe indicar "Azure for Students" (o el nombre asignado por tu universidad).
-  * `IsDefault`: Debe ser `True`.
-  * `Id`: Este es tu `Subscription ID`. Anota los **últimos 4 caracteres** (los usaremos para el sufijo único).
+* **Suscripción confirmada:** `Azure for Students`
+* **Subscription ID:** `7cf3c7d8-37da-45a5-87c4-209a2f571acd`
+* **Sufijo único asignado:** `1acd`
 
 ---
 
-## 🪣 Fase 2: Plataforma Base de Estado de Terraform (Azure Blob Storage)
+## 🪣 Fase 2: Plataforma Base de Larga Vida (Storage Account y ACR)
 
-En Azure, el estado de Terraform (`.tfstate`) se almacena en un contenedor de Azure Blob Storage dentro de un **Storage Account**.
+En Azure, el estado de Terraform (`.tfstate`) se almacena en un contenedor de Azure Blob Storage dentro de un **Storage Account**, y las imágenes Docker en **Azure Container Registry (ACR)**.
 
 ### 2.1 Definición de Variables de Plataforma
-*(Reemplaza `XXXX` con los últimos 4 caracteres de tu Subscription ID para garantizar unicidad mundial)*:
 ```powershell
 $RG="sri-tfstate-rg"
-$LOCATION="eastus"
-$STORAGE="sritfstateXXXX"   # Ejemplo: sritfstatea1b2 (solo letras minúsculas y números, max 24 chars)
+$LOCATION="canadacentral"
+$STORAGE="sritfstate1acd"
 $CONTAINER="tfstate"
+$ACR="sriacrtfm1acd"
 ```
 
 ### 2.2 Creación del Resource Group y Storage Account
@@ -134,6 +133,16 @@ az provider register --namespace Microsoft.Network
 az provider register --namespace Microsoft.Storage
 az provider register --namespace Microsoft.KeyVault
 az provider register --namespace Microsoft.ContainerRegistry
+```
+
+### 2.4 Creación del Azure Container Registry (ACR)
+```powershell
+az acr create `
+  --resource-group $RG `
+  --name $ACR `
+  --sku Basic `
+  --admin-enabled true `
+  --location $LOCATION
 ```
 
 ---
