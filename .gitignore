@@ -23,6 +23,7 @@ MANIFEST
 .pytest_cache/
 .coverage
 htmlcov/
+scratch/
 .tox/
 .venv/
 venv/
