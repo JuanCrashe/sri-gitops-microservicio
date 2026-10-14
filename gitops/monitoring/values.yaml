@@ -1,6 +1,6 @@
 # ============================================
-# Valores para kube-prometheus-stack (Prometheus + Grafana + Alertmanager)
-# Observabilidad unificada, común a ambos clusters (EKS y AKS)
+# Valores para kube-prometheus-stack (Prometheus + Grafana)
+# Observabilidad unificada y ligera para clusters administrados (AKS y EKS)
 # ============================================
 
 fullnameOverride: sri-monitoring
@@ -8,15 +8,14 @@ fullnameOverride: sri-monitoring
 # ----- Prometheus -----
 prometheus:
   prometheusSpec:
-    retention: 15d
+    retention: 2d
     resources:
       requests:
-        cpu: 250m
-        memory: 512Mi
+        cpu: 100m
+        memory: 256Mi
       limits:
-        cpu: "1"
-        memory: 1Gi
-    # Descubre ServiceMonitors de todos los namespaces sin filtrar por label
+        cpu: 500m
+        memory: 512Mi
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     storageSpec:
@@ -25,40 +24,70 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 20Gi
+              storage: 5Gi
+    # Scrape dinámico para pods anotados con prometheus.io/scrape=true (sri-backend)
+    additionalScrapeConfigs:
+      - job_name: 'sri-backend'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - sri-facturacion
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
 
 # ----- Grafana -----
 grafana:
   enabled: true
   defaultDashboardsEnabled: true
-  # La contraseña admin debe inyectarse vía Secret (no en texto plano)
-  admin:
-    existingSecret: grafana-admin
-    userKey: admin-user
-    passwordKey: admin-password
+  adminPassword: prom-operator
   resources:
     requests:
-      cpu: 100m
+      cpu: 50m
       memory: 128Mi
     limits:
-      cpu: 500m
+      cpu: 250m
       memory: 256Mi
   service:
     type: ClusterIP
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
 
-# ----- Alertmanager -----
+# ----- Alertmanager (Deshabilitado para optimizar recursos en cluster de estudiante) -----
 alertmanager:
-  enabled: true
-  alertmanagerSpec:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
+  enabled: false
 
-# ----- Exporters de nodo/kubelet (métricas del cluster) -----
+# ----- Deshabilitar métricas de Control Plane en nubes administradas -----
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+
+# ----- Exporters del nodo y estado -----
 nodeExporter:
   enabled: true
 kubeStateMetrics:
