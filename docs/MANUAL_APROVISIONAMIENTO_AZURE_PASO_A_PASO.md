@@ -333,7 +333,7 @@ kubectl get pods -n monitoring -w
 
 ### 8.4 Acceder a la Interfaz de Grafana
 ```powershell
-kubectl port-forward svc/sri-monitoring-grafana -n monitoring 3000:80
+kubectl port-forward svc/sri-monitor-azure-aks-grafana -n monitoring 3000:80
 ```
 * **URL:** [http://localhost:3000](http://localhost:3000)
 * **Usuario:** `admin`
