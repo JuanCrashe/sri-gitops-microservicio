@@ -21,9 +21,9 @@ variable "cluster_name" {
 }
 
 variable "kubernetes_version" {
-  description = "Versión de Kubernetes compatible con AKS"
+  description = "Versión de Kubernetes compatible con AKS (default en canadacentral)"
   type        = string
-  default     = "1.30"
+  default     = "1.36"
 }
 
 variable "environment" {

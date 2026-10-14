@@ -7,3 +7,5 @@ data:
   CLUSTER_NAME: "sri-aks-cluster"
   CLOUD_REGION: "canadacentral"
   ENVIRONMENT: "production"
+  SUPABASE_URL: "https://uqmulkneizbyksquqsrg.supabase.co"
+  PUBLIC_BACKEND_URL: ""
