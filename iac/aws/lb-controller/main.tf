@@ -39,34 +39,11 @@ data "aws_eks_cluster" "this" {
   name = var.cluster_name
 }
 
-# Certificado del emisor OIDC del cluster (para el thumbprint del provider)
-data "tls_certificate" "eks" {
-  url = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
-}
+data "aws_caller_identity" "current" {}
 
-# ============================================
-# OIDC provider IAM del cluster.
-# NOTA: el modulo iac/modules/kubernetes-cluster NO lo crea (leccion de
-# auditoria 2026-10-03); IRSA no funciona sin el. Es un recurso de cuenta
-# asociado al cluster: se destruye junto a esta sesion.
-# ============================================
-resource "aws_iam_openid_connect_provider" "eks" {
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
-  url             = data.aws_eks_cluster.this.identity[0].oidc[0].issuer
-
-  tags = merge(var.tags, {
-    Name = "${var.cluster_name}-eks-oidc-provider"
-  })
-
-  # Recurso de CUENTA compartido (unico por issuer): en el flujo normal lo
-  # CREA iac/aws/secrets-csi y este modulo lo IMPORTA. Los tags los gobierna
-  # el modulo creador; aqui se ignoran para evitar la pelea de tags entre
-  # ambos states (incidente 2026-10-06: el apply intento untag -> AccessDenied
-  # UntagOpenIDConnectProvider, permiso no otorgado por least-privilege).
-  lifecycle {
-    ignore_changes = [tags, tags_all]
-  }
+locals {
+  oidc_issuer_clean = replace(data.aws_eks_cluster.this.identity[0].oidc[0].issuer, "https://", "")
+  oidc_provider_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${local.oidc_issuer_clean}"
 }
 
 # ============================================
@@ -80,18 +57,18 @@ data "aws_iam_policy_document" "irsa_trust" {
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+      identifiers = [local.oidc_provider_arn]
     }
 
     condition {
       test     = "StringEquals"
-      variable = "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:sub"
+      variable = "${local.oidc_issuer_clean}:sub"
       values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
     }
 
     condition {
       test     = "StringEquals"
-      variable = "${replace(aws_iam_openid_connect_provider.eks.url, "https://", "")}:aud"
+      variable = "${local.oidc_issuer_clean}:aud"
       values   = ["sts.amazonaws.com"]
     }
   }
