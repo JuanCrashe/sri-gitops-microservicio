@@ -301,12 +301,60 @@ kubectl get svc sri-frontend-svc -n sri-facturacion -w
 
 ---
 
-## 💰 Fase 8: FinOps - Desmantelamiento y Limpieza Preventiva de Costos
+## 📊 Fase 8: Despliegue del Stack de Observabilidad (Prometheus + Grafana + Métricas DORA)
+
+Desplegamos el stack unificado de observabilidad gestionado por GitOps con ArgoCD en el namespace `monitoring`.
+
+### 8.1 Crear el Namespace y Registrar el Dashboard DORA
+```powershell
+kubectl create namespace monitoring
+
+kubectl create configmap grafana-dashboard-dora -n monitoring `
+  --from-file="dashboard-dora.json=c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\gitops\monitoring\dashboard-dora.json"
+
+kubectl label configmap grafana-dashboard-dora -n monitoring grafana_dashboard=1
+```
+
+### 8.2 Desplegar la Aplicación de Monitoreo con ArgoCD
+```powershell
+kubectl apply -f "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\gitops\argocd\application-monitor-azure.yaml"
+```
+
+### 8.3 Monitorear el Despliegue de los Pods de Observabilidad
+```powershell
+kubectl get pods -n monitoring -w
+```
+* **Pods desplegados:**
+  - `sri-monitoring-kube-p-operator-*` (Prometheus Operator)
+  - `prometheus-sri-monitoring-kube-p-prometheus-0` (Servidor Prometheus)
+  - `sri-monitoring-grafana-*` (Servidor Grafana)
+  - `sri-monitoring-kube-state-metrics-*` (Métricas de K8s)
+  - `sri-monitoring-prometheus-node-exporter-*` (DaemonSet en cada nodo)
+
+### 8.4 Acceder a la Interfaz de Grafana
+```powershell
+kubectl port-forward svc/sri-monitoring-grafana -n monitoring 3000:80
+```
+* **URL:** [http://localhost:3000](http://localhost:3000)
+* **Usuario:** `admin`
+* **Contraseña:** `prom-operator`
+* **Dashboard incluido:** *SRI GitOps - Métricas DORA y Resiliencia Multicloud* (UID: `sri-dora-metrics`).
+
+---
+
+## 💰 Fase 9: FinOps - Desmantelamiento y Limpieza Preventiva de Costos
 
 > [!WARNING]
 > La cuenta de estudiante de Azure dispone de un crédito limitado ($100 USD). Para no agotar dicho crédito, al finalizar la prueba o demostración se deben eliminar los recursos que consumen cómputo por hora.
 
-### 8.1 Destruir la Infraestructura de AKS (Terraform)
+### 9.1 Eliminar Aplicaciones de ArgoCD y Balanceadores
+```powershell
+kubectl delete application sri-monitor-azure-aks -n argocd --cascade=foreground
+kubectl delete application sri-facturacion-azure-aks -n argocd --cascade=foreground
+kubectl delete svc sri-frontend-svc -n sri-facturacion --ignore-not-found=true
+```
+
+### 9.2 Destruir la Infraestructura de AKS (Terraform)
 ```powershell
 cd "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\iac\azure"
 terraform destroy -auto-approve
@@ -314,10 +362,11 @@ terraform destroy -auto-approve
 * **Qué destruye:** El clúster `sri-aks-cluster`, los 2 nodos `Standard_D2s_v3`, el LoadBalancer público y el Resource Group `sri-aks-rg`.
 * **Tiempo estimado:** ~4 a 6 minutos.
 
-### 8.2 Eliminar los Recursos Base (Opcional - solo si se desea eliminar todo)
+### 9.3 Eliminar los Recursos Base (Opcional - solo si se desea eliminar todo)
 Si deseas eliminar también el registro ACR y el estado de Terraform:
 ```powershell
 az group delete --name sri-tfstate-rg --yes --no-wait
 ```
+
 
 
