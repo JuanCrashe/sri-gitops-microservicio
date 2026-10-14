@@ -21,13 +21,13 @@ Está diseñado específicamente para:
 ## 🗺️ Mapa de Fases del Aprovisionamiento en Azure
 
 ```
-[FASE 1: PREPARACIÓN LOCAL & AZURE CLI (az login)] ⏳ EN CURSO
+[FASE 1: PREPARACIÓN LOCAL & AZURE CLI (az login)] ✅ COMPLETADA
                         │
                         ▼
-[FASE 2: RECURSOS BASE STORAGE SA / ACR]           ⏳ PENDIENTE
+[FASE 2: RECURSOS BASE STORAGE SA / ACR]           ✅ COMPLETADA
                         │
                         ▼
-[FASE 3: TERRAFORM APPLY (CLÚSTER AKS)]            ⏳ PENDIENTE
+[FASE 3: TERRAFORM APPLY (CLÚSTER AKS 2 NODOS)]    ⏳ EN CURSO
                         │
                         ▼
 [FASE 4: KUBECTL & CONTROLLERS (ARGOCD/METRICS)]   ⏳ PENDIENTE
@@ -147,5 +147,177 @@ az acr create `
 
 ---
 
-*(Fases 3 a 8 se actualizarán conforme ejecutemos el aprovisionamiento).*
+## 🏗️ Fase 3: Aprovisionamiento del Clúster Azure AKS (Terraform)
+
+El código de Terraform en `iac/azure` provisiona:
+* **Resource Group:** `sri-aks-rg` en `canadacentral`.
+* **Clúster AKS:** `sri-aks-cluster` ejecutando Kubernetes `v1.36` (versión oficial por defecto en canadacentral).
+* **Node Pool:** 2 nodos `Standard_D2s_v3` (4 vCPUs y 16 GB RAM totales, adaptado al límite de estudiante).
+* **Identidad:** Identidad Administrada del Sistema (`SystemAssigned`).
+
+### 3.1 Cargar Terraform en el PATH (si es necesario)
+```powershell
+$env:PATH += ";C:\Users\ASUS\AppData\Local\Microsoft\WinGet\Packages\Hashicorp.Terraform_Microsoft.Winget.Source_8wekyb3d8bbwe"
+```
+
+### 3.2 Inicializar el Directorio de Terraform
+```powershell
+cd "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\iac\azure"
+terraform init
+```
+* **Qué hace:** Conecta con el contenedor `tfstate` en `sritfstate1acd` y descarga el proveedor oficial `hashicorp/azurerm` (~> 3.0).
+
+### 3.3 Validar el Plan de Ejecución
+```powershell
+terraform plan
+```
+* **Salida esperada:** `Plan: 2 to add, 0 to change, 0 to destroy.`
+  1. `azurerm_resource_group.main` (`sri-aks-rg`)
+  2. `azurerm_kubernetes_cluster.main` (`sri-aks-cluster`)
+
+### 3.4 Desplegar la Infraestructura en Azure
+```powershell
+terraform apply -auto-approve
+```
+* **Tiempo estimado:** ~4 a 6 minutos.
+
+### 3.5 Vincular el Registro ACR con AKS (Permiso de Pull Automático)
+Una vez creado el clúster, vinculamos el ACR para que el kubelet descargue las imágenes sin necesitar secretos:
+```powershell
+az aks update --resource-group sri-aks-rg --name sri-aks-cluster --attach-acr sriacrtfm1acd
+```
+
+### 3.6 Descargar Credenciales de Kubectl
+```powershell
+az aks get-credentials --resource-group sri-aks-rg --name sri-aks-cluster --overwrite-existing
+kubectl get nodes -o wide
+```
+* **Salida esperada:** 2 nodos en estado `Ready`.
+
+---
+
+## 🐙 Fase 4: Despliegue de ArgoCD en Azure AKS
+
+Para la gestión declarativa de las aplicaciones bajo el enfoque GitOps, instalamos el operador oficial de ArgoCD en su propio espacio de nombres.
+
+### 4.1 Crear Namespace e Instalar Manifiestos de ArgoCD
+```powershell
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.11.0/manifests/install.yaml
+```
+
+### 4.2 Esperar a que los Pods de ArgoCD estén Listos
+```powershell
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+```
+
+### 4.3 Registrar el AppProject de la Aplicación
+```powershell
+kubectl apply -f "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\gitops\argocd\project.yaml"
+```
+
+### 4.4 Obtener la Contraseña Inicial del Administrador de ArgoCD
+```powershell
+[System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String((kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}")))
+```
+* **Usuario:** `admin`
+
+---
+
+## 📦 Fase 5: Publicación de Imágenes Docker en Azure Container Registry (ACR)
+
+Las imágenes construidas localmente se etiquetan con el dominio de Azure Container Registry (`sriacrtfm1acd.azurecr.io`) y se envían mediante Docker.
+
+### 5.1 Iniciar Sesión en el ACR
+```powershell
+az acr login --name sriacrtfm1acd
+```
+* **Salida esperada:** `Login Succeeded`
+
+### 5.2 Etiquetar las Imágenes Locales para ACR
+```powershell
+docker tag sri-backend:latest sriacrtfm1acd.azurecr.io/sri-backend:latest
+docker tag sri-frontend:latest sriacrtfm1acd.azurecr.io/sri-frontend:latest
+```
+
+### 5.3 Subir las Imágenes al Registro Privado de Azure
+```powershell
+docker push sriacrtfm1acd.azurecr.io/sri-backend:latest
+docker push sriacrtfm1acd.azurecr.io/sri-frontend:latest
+```
+
+### 5.4 Verificar las Imágenes en Azure
+```powershell
+az acr repository list --name sriacrtfm1acd --output table
+```
+* **Salida esperada:**
+  - `sri-backend`
+  - `sri-frontend`
+
+---
+
+## 🚀 Fase 6: Secretos y Despliegue de la Aplicación SRI con GitOps
+
+### 6.1 Crear el Namespace de la Aplicación
+```powershell
+kubectl create namespace sri-facturacion
+```
+
+### 6.2 Crear el Secreto de Kubernetes para Producción
+Creamos el secreto nativo de Kubernetes que inyecta la conexión a Supabase y claves criptográficas:
+```powershell
+kubectl create secret generic sri-facturacion-secrets `
+  --namespace sri-facturacion `
+  --from-literal=SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxbXVsa25laXpieWtzcXVxc3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMTEyNTYsImV4cCI6MjA5ODc4NzI1Nn0.AqDdDrj4Q566Vqn68fLAIrkWBRTvHVBA9tkj_FI661E" `
+  --from-literal=JWT_SECRET="super-secret-key-cambiar-en-produccion" `
+  --from-literal=FLASK_SECRET_KEY="clave_secreta_frontend_aqui"
+```
+
+### 6.3 Desplegar la Aplicación SRI vía ArgoCD
+```powershell
+kubectl apply -f "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\gitops\argocd\application-azure-aks.yaml"
+```
+
+### 6.4 Monitorear el Despliegue de Pods
+```powershell
+kubectl get pods -n sri-facturacion -o wide
+```
+* **Salida esperada:** 3 réplicas de `sri-backend` y 3 réplicas de `sri-frontend` en estado `Running`.
+
+---
+
+## 🌐 Fase 7: Validación del Frontend y Consumo del SRI
+
+### 7.1 Obtener la IP Pública del Frontend (LoadBalancer de Azure)
+```powershell
+kubectl get svc sri-frontend-svc -n sri-facturacion -w
+```
+* Una vez que la columna `EXTERNAL-IP` pase de `<pending>` a una IP pública (ej. `20.x.x.x`), presiona `Ctrl + C`.
+
+### 7.2 Probar la Aplicación en el Navegador Web
+* Abre tu navegador e ingresa a: `http://<EXTERNAL-IP>`
+* Inicia sesión con las credenciales de prueba configuradas en Supabase.
+* Consulta un RUC (ej. `1790016919001`) y valida la actualización de datos asíncrona.
+
+---
+
+## 💰 Fase 8: FinOps - Desmantelamiento y Limpieza Preventiva de Costos
+
+> [!WARNING]
+> La cuenta de estudiante de Azure dispone de un crédito limitado ($100 USD). Para no agotar dicho crédito, al finalizar la prueba o demostración se deben eliminar los recursos que consumen cómputo por hora.
+
+### 8.1 Destruir la Infraestructura de AKS (Terraform)
+```powershell
+cd "c:\Users\ASUS\Documents\Papi\Maestria DevOps UNIR\TFM\microservicio\sri-gitops-microservicio\iac\azure"
+terraform destroy -auto-approve
+```
+* **Qué destruye:** El clúster `sri-aks-cluster`, los 2 nodos `Standard_D2s_v3`, el LoadBalancer público y el Resource Group `sri-aks-rg`.
+* **Tiempo estimado:** ~4 a 6 minutos.
+
+### 8.2 Eliminar los Recursos Base (Opcional - solo si se desea eliminar todo)
+Si deseas eliminar también el registro ACR y el estado de Terraform:
+```powershell
+az group delete --name sri-tfstate-rg --yes --no-wait
+```
+
 
