@@ -30,10 +30,10 @@ patches:
 images:
 - name: sri-backend
   newName: sriacrtfm1acd.azurecr.io/sri-backend
-  newTag: 95a0dcbc9c2406c3f495ba0f606cee8ead1706fb
+  newTag: 7f50ce5dc493a8bc0325d6d4e65cff81f2a7188d
 - name: sri-frontend
   newName: sriacrtfm1acd.azurecr.io/sri-frontend
-  newTag: 95a0dcbc9c2406c3f495ba0f606cee8ead1706fb
+  newTag: 7f50ce5dc493a8bc0325d6d4e65cff81f2a7188d
 
 commonLabels:
   cloud: azure-aks
