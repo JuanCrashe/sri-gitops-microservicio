@@ -1,12 +1,12 @@
 import os
 import requests
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, Response
 from functools import wraps
 
 frontend_bp = Blueprint('frontend', __name__)
 
 BACKEND_URL = os.environ.get('BACKEND_URL', 'http://localhost:5000')
-PUBLIC_BACKEND_URL = os.environ.get('PUBLIC_BACKEND_URL', 'http://localhost:5000')
+PUBLIC_BACKEND_URL = os.environ.get('PUBLIC_BACKEND_URL', '')
 
 def login_required(f):
     @wraps(f)
@@ -29,10 +29,14 @@ def login():
         password = request.form.get('password')
         
         try:
-            response = requests.post(f"{BACKEND_URL}/api/v1/auth/login", data={
-                "username": ruc,
-                "password": password
-            })
+            response = requests.post(
+                f"{BACKEND_URL}/api/v1/auth/login",
+                data={
+                    "username": ruc,
+                    "password": password
+                },
+                timeout=10
+            )
             
             if response.status_code == 200:
                 data = response.json()
@@ -40,9 +44,11 @@ def login():
                 session['ruc'] = data.get('ruc')
                 return redirect(url_for('frontend.detalle'))
             else:
-                error_msg = response.json().get('error', 'Credenciales inválidas')
+                data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {}
+                error_msg = data.get('detail') or data.get('error') or 'Credenciales inválidas'
                 flash(error_msg, 'error')
-        except requests.exceptions.RequestException:
+        except requests.exceptions.RequestException as e:
+            current_app.logger.error(f"Error conectando al backend: {e}")
             flash('Error de conexión con el servidor de autenticación', 'error')
             
     return render_template('login.html')
@@ -60,3 +66,29 @@ def detalle():
         # Si por alguna razon no hay RUC, lo sacamos
         return redirect(url_for('frontend.logout'))
     return render_template('detalle.html', backend_url=PUBLIC_BACKEND_URL, token=session.get('token'), ruc=ruc)
+
+@frontend_bp.route('/api/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])
+def proxy_api(path):
+    """
+    Reverse proxy interno para peticiones AJAX del cliente hacia el backend.
+    Evita exponer puertos o IPs públicas adicionales y previene problemas de CORS.
+    """
+    url = f"{BACKEND_URL}/api/{path}"
+    headers = {key: value for key, value in request.headers if key.lower() not in ['host', 'content-length']}
+    try:
+        resp = requests.request(
+            method=request.method,
+            url=url,
+            headers=headers,
+            data=request.get_data(),
+            params=request.args,
+            allow_redirects=False,
+            timeout=10
+        )
+        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+        resp_headers = [(name, value) for (name, value) in resp.raw.headers.items()
+                        if name.lower() not in excluded_headers]
+        return Response(resp.content, resp.status_code, resp_headers)
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Error en reverse proxy API: {e}")
+        return {"error": "Error de comunicación con el backend"}, 502
